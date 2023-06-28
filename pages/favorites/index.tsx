@@ -19,8 +19,8 @@ const FavoritesPage = () => {
           <div className={style.container}>
             {favorites &&
               favorites.map((favor) => (
-                <Link href={`name/${favor.name}`}>
-                  <div key={favor.id} className={style["image-container"]}>
+                <Link href={`name/${favor.name}`}key={favor.id}>
+                  <div  className={style["image-container"]}>
                     <Image
                       src={favor.image.big}
                       width={100}
