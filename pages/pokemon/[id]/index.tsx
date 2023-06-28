@@ -48,14 +48,17 @@ const Pokemon: NextPage<Props> = ({ pokemon }) => {
 
   const { updateFavorites } = useFavoritesContext();
 
-  useEffect(()=>{
-    const local:Props['pokemon'][] = JSON.parse(localStorage.getItem("favorites"));
-    local && local.map(pokemonL =>{
-     if( pokemonL.id === id){
-      setExist(true);
-     }
-    })
-  },[])
+  useEffect(() => {
+    const local: Props["pokemon"][] = JSON.parse(
+      localStorage.getItem("favorites")
+    );
+    local &&
+      local.map((pokemonL) => {
+        if (pokemonL.id === id) {
+          setExist(true);
+        }
+      });
+  }, []);
 
   useEffect(() => {
     if (pokemonSelect && pokemonSelect.id !== "") {
@@ -93,7 +96,7 @@ const Pokemon: NextPage<Props> = ({ pokemon }) => {
               </Text>
 
               <Button color="gradient" ghost onClick={handleToggle}>
-                {exist ? "Delete from Favorites" :"Save in Favorites" }
+                {exist ? "Delete from Favorites" : "Save in Favorites"}
               </Button>
             </Card.Header>
 
@@ -138,19 +141,20 @@ export const getStaticPaths: GetStaticPaths = async (ctx) => {
     paths: pokemons151.map((id) => ({
       params: { id },
     })),
-    fallback: false,
+    
+    fallback: "blocking",
   };
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const { id } = params as { id: string };
   const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}/`);
-  const { species, sprites }: Species = await response.json();
-  const { back_default, back_shiny, front_default, front_shiny } = sprites;
+  try {
+    if (response.ok) {
+      const { species, sprites }: Species = await response.json();
+      const { back_default, back_shiny, front_default, front_shiny } = sprites;
 
-  return {
-    props: {
-      pokemon: {
+      const pokemon = {
         id,
         name: species.name,
         image: {
@@ -160,8 +164,23 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           front_default: front_default,
           front_shiny: front_shiny,
         },
+      };
+      return {
+        props: {
+          pokemon,
+        },
+        revalidate: 86400,
+      };
+    }
+
+    return {
+      redirect: {
+        destination: "/",
+        permanent: false,
       },
-    },
-  };
+    };
+  } catch (error) {
+    console.log(error);
+  }
 };
 export default Pokemon;

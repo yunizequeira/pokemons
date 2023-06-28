@@ -4,6 +4,7 @@ import { Layout } from "../../../components/layouts";
 import { Button, Card, Container, Grid, Text } from "@nextui-org/react";
 import Image from "next/image";
 import { useFavoritesContext } from "../../../hook/useFavoriteContext";
+import { redirect } from "next/dist/server/api-utils";
 
 interface Props {
   pokemon: {
@@ -131,19 +132,18 @@ export const getStaticPaths: GetStaticPaths = async (ctx) => {
         name,
       },
     })),
-    fallback: false,
+    fallback: "blocking",
   };
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const { name } = params;
   const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${name}`);
-  const { sprites } = await response.json();
-  const { back_default, back_shiny, front_default, front_shiny } = sprites;
-
-  return {
-    props: {
-      pokemon: {
+  try {
+    if (response.ok) {
+      const { sprites } = await response.json();
+      const { back_default, back_shiny, front_default, front_shiny } = sprites;
+      const pokemon = {
         name,
         image: {
           big: sprites.other.dream_world.front_default,
@@ -152,9 +152,23 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           front_default: front_default,
           front_shiny: front_shiny,
         },
+      };
+      return {
+        props: {
+          pokemon,
+        },
+        revalidate: 84600,
+      };
+    }
+    return {
+      redirect: {
+        destination: "/",
+        permanent: false,
       },
-    },
-  };
+    };
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 export default PokemonByNamePage;
